@@ -478,6 +478,14 @@ const editable = import.meta.env.DEV;
   });
 
   readColors();
+  // In the production build the stylesheet can load after this script runs, leaving the colors empty:
+  // read them again once the page has fully loaded
+  if (document.readyState !== 'complete') {
+    window.addEventListener('load', () => {
+      readColors();
+      if (width) draw();
+    });
+  }
   new ResizeObserver(resize).observe(canvas);
   // Label widths depend on the web font, so measure again once it has loaded
   document.fonts.ready.then(() => {
