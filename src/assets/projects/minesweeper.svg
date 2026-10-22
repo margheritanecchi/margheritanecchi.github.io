@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <text class="t-label" x="16" y="22">GitHub Actions · on every push and PR</text>
+  <g class="t-edge">
+    <path d="M80 47 L90 47"/>
+    <path d="M176 47 L186 47"/>
+  </g>
+  <rect class="t-box" x="16" y="34" width="64" height="26" rx="13"/>
+  <text class="t-name-strong" x="48" y="51" text-anchor="middle">git push</text>
+  <rect class="t-box" x="90" y="34" width="86" height="26" rx="13"/>
+  <text class="t-name-strong" x="133" y="51" text-anchor="middle">gradle build</text>
+  <rect class="t-box" x="186" y="34" width="120" height="26" rx="13"/>
+  <text class="t-name-strong" x="246" y="51" text-anchor="middle">JUnit + Mockito</text>
+  <rect class="t-pass" x="16" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="37" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="58" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="79" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="100" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="121" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="142" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="163" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="184" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="205" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="226" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="247" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="268" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="289" y="92" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="16" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="37" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="58" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="79" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="100" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="121" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="142" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="163" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="184" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="205" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="226" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="247" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="268" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="289" y="107" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="16" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="37" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="58" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="79" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="100" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="121" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="142" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="163" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="184" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="205" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="226" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="247" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="268" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="289" y="122" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="16" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="37" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="58" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="79" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="100" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="121" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="142" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="163" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="184" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="205" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="226" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="247" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="268" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="289" y="137" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="16" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="37" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="58" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="79" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="100" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="121" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="142" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="163" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="184" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="205" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="226" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="247" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="268" y="152" width="17" height="11" rx="2"/>
+  <rect class="t-pass" x="289" y="152" width="17" height="11" rx="2"/>
+  <text class="t-label" x="16" y="84">70 tests, all green</text>
+</svg>

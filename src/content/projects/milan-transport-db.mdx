@@ -1,0 +1,79 @@
+---
+title: Milan Public Transport Database
+summary: A relational database to help optimise Milan's public transport network, designed end to end from the requirements.
+kicker: Databases · 2024
+date: June 2024
+role: Sole author — requirements, conceptual and logical design, SQL implementation and Python client
+stack: [SQL, MySQL, E-R modelling, Python]
+links:
+  - { label: Report (PDF), href: /files/milan-transport-database.pdf }
+---
+
+<div class="tldr">
+
+**TL;DR**
+- A database for a project to optimise Milan's network of metro, tram and bus lines.
+- Full design cycle: requirements → E-R schema → restructuring → normalised relational schema → SQL.
+- Design decisions backed by **access-cost estimates**, not intuition.
+- Constraints the schema cannot express enforced with **triggers**; analyses run from **Python** via stored procedures.
+
+</div>
+
+## The problem
+
+The transport company wants to rank its routes by a "quality measure" built from four things: how much a route pollutes,
+how long it takes, how much it costs to run and how much of the city it covers. The database must make that data fast to
+reach: vehicles, routes, stops, priority lanes, city zones, runs and every validated ticket.
+
+## From requirements to schema
+
+I started by splitting the requirements into homogeneous groups of sentences (vehicles, tickets, users, routes, stops,
+zones, runs), with a glossary to fix the vocabulary. I then listed the operations the database must serve and how often:
+
+| Operation | Type | Frequency |
+|---|---|---|
+| Routes with more than two distinct priority lanes | interactive | 2 / month |
+| Ridership of a route in a time slot | interactive | 2 / month |
+| Removal of expired passes and their owners | batch | daily |
+| Average travel time between two stops of a run | interactive | 2 / month |
+| Average number of routes per zone | interactive | 2 / month |
+
+The conceptual E-R schema was paired with a volume table (about 1,600 vehicles, 7,000 stops, 8,900 runs a day,
+800,000 tickets), so that every later decision could be costed.
+
+## Decisions backed by numbers
+
+- **Keep the derived "number of stops".** Without it, the average travel time between two stops needs 47 reads instead
+  of 3. Even at two runs a month, that redundancy is worth its small update cost.
+- **Keep the cycle between routes, priority lanes and stops.** Counting the priority lanes of a route through the direct
+  relationship costs 280 + 4M reads a month; going through the stops costs 280 + 10N.
+- **Generalisations.** Metro, tram and bus were merged into a single vehicle entity with a type attribute; paper tickets
+  and travel passes were kept as separate entities linked to a common ticket, because their attributes have nothing in common.
+
+The restructured schema was translated into relations and checked for normal form.
+
+## SQL, triggers and Python
+
+Three rules cannot be expressed in the schema, so each became a trigger: a run must end after it starts, a ticket must be
+validated during its run, and a priority lane must have two distinct end stops.
+
+```sql
+CREATE TRIGGER check_corsa BEFORE INSERT ON Corsa
+FOR EACH ROW
+BEGIN
+  IF NEW.ora_fine <= NEW.ora_inizio THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid times';
+  END IF;
+END
+```
+
+Finally, a Python client connects to MySQL and creates and calls stored procedures, for example the share of paper
+tickets among all tickets validated on a given day.
+
+## What I took away
+
+- **Good schemas come from the queries.** Listing the operations and their frequency first made every structural choice
+  defensible.
+- **Redundancy is a trade-off, not a sin.** Estimating access costs turned "should we store this?" into a calculation.
+- **Not everything fits in a diagram.** Some business rules only live in triggers, and they need to be documented as
+  carefully as the schema.

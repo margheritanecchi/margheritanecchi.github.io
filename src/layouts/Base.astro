@@ -1,0 +1,57 @@
+---
+import '../styles/global.css';
+import { profile } from '../data/content';
+import Daisy from '../assets/daisy.svg';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = profile.name,
+  description = 'Margherita Necchi — MSc student in Data & AI at Institut Polytechnique de Paris. Knowledge graphs, NLP and machine learning.',
+} = Astro.props;
+
+const navLinks = [
+  { label: 'Projects', href: '/#projects' },
+  { label: 'Publications', href: '/#publications' },
+  { label: 'Background', href: '/#background' },
+  { label: 'CV', href: profile.cv },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <nav class="wrap nav">
+        <a href="/" class="brand"><Daisy class="brand-mark" aria-hidden="true" />M. Necchi</a>
+        <ul>
+          {navLinks.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+        </ul>
+      </nav>
+    </header>
+
+    <main class="wrap">
+      <slot />
+    </main>
+
+    <footer class="wrap footer">
+      <p>© {new Date().getFullYear()} {profile.name}</p>
+    </footer>
+  </body>
+</html>

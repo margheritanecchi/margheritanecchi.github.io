@@ -1,0 +1,74 @@
+{
+  "me": [
+    -0.021,
+    0.042
+  ],
+  "nlp": [
+    -0.732,
+    -0.161
+  ],
+  "ml": [
+    0.462,
+    -0.652
+  ],
+  "kg": [
+    -0.245,
+    0.636
+  ],
+  "systems": [
+    0.476,
+    0.522
+  ],
+  "complex": [
+    -0.645,
+    0.068
+  ],
+  "punning-intended": [
+    0.065,
+    0.942
+  ],
+  "yago-4-6": [
+    -0.538,
+    0.945
+  ],
+  "yago": [
+    -0.715,
+    0.546
+  ],
+  "studio-ingegneria-web": [
+    0.246,
+    0.802
+  ],
+  "intent-classification": [
+    -0.066,
+    -0.371
+  ],
+  "influencer-classification": [
+    -0.234,
+    -0.607
+  ],
+  "when-words-hurt": [
+    -0.645,
+    -0.789
+  ],
+  "decentralizing-navigation": [
+    -0.635,
+    0.24
+  ],
+  "ray-tracer": [
+    0.768,
+    -0.285
+  ],
+  "minesweeper": [
+    0.821,
+    0.314
+  ],
+  "milan-transport-db": [
+    0.304,
+    -0.145
+  ],
+  "lmc-simulator": [
+    0.735,
+    0.686
+  ]
+}

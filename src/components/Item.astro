@@ -1,0 +1,21 @@
+---
+// A titled entry with a date on the right, used for publications, experience and education.
+interface Props {
+  id: string;
+  title: string;
+  subtitle?: string;
+  date: string | number;
+  meta?: string;
+}
+
+const { id, title, subtitle, date, meta } = Astro.props;
+---
+
+<article class="item" id={id}>
+  <div class="item-head">
+    <h3>{title} {subtitle && <span class="sub">{subtitle}</span>}</h3>
+    <span class="date">{date}</span>
+  </div>
+  {meta && <p class="meta" set:html={meta} />}
+  <slot />
+</article>

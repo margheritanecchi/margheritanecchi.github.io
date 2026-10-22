@@ -1,0 +1,137 @@
+---
+import Base from '../layouts/Base.astro';
+import Item from '../components/Item.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import KnowledgeGraph from '../components/KnowledgeGraph.astro';
+import Daisy from '../assets/daisy.svg';
+import Daisies from '../assets/daisies.svg';
+import { Image } from 'astro:assets';
+import portrait from '../assets/portrait.jpg';
+import { profile, publications, experience, projects, education, memberships } from '../data/content';
+
+// Bold the site owner's name inside author lists
+const highlightAuthor = (authors: string) => authors.replace('M. Necchi', '<strong>M. Necchi</strong>');
+---
+
+<Base>
+  <section class="hero">
+    <div class="hero-text">
+      <div class="portrait-row">
+        <Image src={portrait} alt={profile.name} width={240} height={240} class="portrait" loading="eager" />
+        <Daisy class="portrait-daisy" aria-hidden="true" />
+      </div>
+      <p class="eyebrow">{profile.tagline}</p>
+      <h1>Margherita<br />Necchi</h1>
+      {profile.status && <p class="status"><span class="pulse"></span>{profile.status}</p>}
+      <p class="lead">
+         I build AI systems, enjoy tackling hard problems, and want to make AI more reliable and trustworthy. I still believe I might change the world through what I do. 
+         Maybe that's naive. I'm not ready to give it up.
+      </p>
+      <p class="lead">
+        In my research on <a href="https://yago-knowledge.org">YAGO</a> and Wikidata I worked on keeping a knowledge
+        base of millions of facts logically consistent: the kind of reliable, structured knowledge that language
+        models still struggle with.
+      </p>
+      <ul class="links">
+        <li><a href={`mailto:${profile.email}`}>email</a></li>
+        <li><a href={profile.github}>github</a></li>
+        <li><a href={profile.linkedin}>linkedin</a></li>
+        <li><a href={profile.cv}>cv.pdf</a></li>
+      </ul>
+    </div>
+    <KnowledgeGraph />
+  </section>
+
+  <section id="projects">
+    <h2>Selected Projects</h2>
+    <div class="grid">
+      {projects.map((project) => <ProjectCard {...project} />)}
+    </div>
+  </section>
+
+  <section id="publications">
+    <h2>Publications</h2>
+    {
+      publications.map((pub) => (
+        <Item
+          id={pub.id}
+          title={pub.title}
+          date={pub.year}
+          meta={[pub.authors && highlightAuthor(pub.authors), `<em>${pub.venue}</em>`].filter(Boolean).join(' · ')}
+        >
+          {pub.summary && <p>{pub.summary}</p>}
+          {pub.pdf && (
+            <p class="actions">
+              <a href={pub.pdf} class="tag">PDF ↗</a>
+            </p>
+          )}
+        </Item>
+      ))
+    }
+  </section>
+
+  <section id="background">
+    <h2>Background</h2>
+    <div class="background">
+      <div>
+        <h3 class="background-heading">Experience</h3>
+        <ul class="timeline">
+          {
+            experience.map((job) => (
+              <li id={job.id}>
+                <span class="date">{job.period}</span>
+                <p>
+                  <strong>{job.org}</strong> <span class="sub">{job.role}</span>
+                </p>
+                <p class="timeline-text">{job.description}</p>
+              </li>
+            ))
+          }
+        </ul>
+        <h3 class="background-heading background-heading-next">Memberships</h3>
+        <ul class="timeline">
+          {
+            memberships.map((entry) => (
+              <li id={entry.id}>
+                <span class="date">{entry.period}</span>
+                <p>
+                  <strong>{entry.name}</strong>
+                </p>
+                <p class="timeline-text">
+                  <a href={entry.href}>{entry.org}</a>
+                </p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div>
+        <h3 class="background-heading">Education</h3>
+        <ul class="timeline">
+          {
+            education.map((entry) => (
+              <li id={entry.id}>
+                <span class="date">{entry.period}</span>
+                <p>
+                  <strong>{entry.degree}</strong>
+                </p>
+                <p class="timeline-text">{entry.school}</p>
+                {entry.coursework && <p class="timeline-text coursework">{entry.coursework}</p>}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+    <p class="more"><a href={profile.cv}>Full details in my CV →</a></p>
+  </section>
+
+  <section id="beyond">
+    <h2>Beyond Code</h2>
+    <p>
+      Fencer since 2015, former scout leader, and volunteer teacher in Nepal (2024) and builder in Peru (2021). Hitachi
+      merit scholarship holder. I enjoy Japanese literature, sailing, hiking and reading about international politics.
+    </p>
+    <Daisies class="beyond-daisies" aria-hidden="true" />
+  </section>
+</Base>

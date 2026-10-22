@@ -1,0 +1,59 @@
+---
+title: Minesweeper, the team way
+summary: The game was the excuse — the goal was learning how a team ships tested, maintainable software.
+kicker: Software engineering · 2025
+date: '2025'
+team: with Alessio Martucci, Giovanni Oro, Riccardo Samaritan and Matteo Vicenzino · Software Development Methods course, Università degli Studi di Trieste
+stack: [Java, Gradle, JUnit, Mockito, GitHub Actions]
+links:
+  - { label: Code, href: 'https://github.com/MatteoVicenzino/Minesweeper2025' }
+  - { label: Slides (PDF), href: /files/minesweeper-presentation.pdf }
+---
+
+<div class="tldr">
+
+**TL;DR**
+- A command-line Minesweeper in Java, built by a team of five with **test-driven development**.
+- **70 JUnit and Mockito tests**, with **continuous integration** on GitHub Actions building and testing every push.
+- Steady refactoring guided by design patterns — and an honest look at what didn't go to plan.
+
+</div>
+
+## The goal
+
+The course was about methods, not games: agile development, automated tests, continuous integration and working software
+at every step. Minesweeper was small enough to finish and rich enough to need real design decisions.
+
+## How we worked
+
+1. **Architecture first.** We brainstormed a class diagram together before writing code.
+2. **Repository and CI.** The GitHub repository and a GitHub Actions workflow were set up before the first feature, so
+   every push was built with Gradle and tested from day one.
+3. **Test-driven development.** For every behaviour we wrote the test first: a new cell is neither mined, revealed nor
+   flagged; a revealed cell cannot be flagged; mine counts are correct even in the corners; revealing an empty cell opens
+   its neighbours; the timer starts at the first click and stops when the game ends.
+4. **Refactoring** whenever the code started to resist a new test.
+
+We split the work by component at the start (cells, board, game logic, command parsing, user interaction), but in practice
+responsibilities shifted as the design evolved — one of the main lessons of the project.
+
+## Design choices
+
+- **Cells as a hierarchy with state classes**, so that behaviour differs by cell type and state without chains of `if`s.
+- **Observer pattern** (`GameEventManager` + `GameEventListener`) so that the game logic announces events and the
+  interface reacts, without either depending on the other; the event manager is a singleton.
+- **A `UIHandler` abstraction**, so a graphical interface can later replace the command line without touching the game.
+- **Refactorings that split responsibilities:** `Board` became `BoardManager`, and mine placement moved into its own
+  `BombPlacer`; commands went from a record to a class hierarchy.
+
+## Testing
+
+Core classes are fully covered by unit tests; game-control classes partially, with Mockito replacing their collaborators;
+user input only by a few tests, since it is the hardest part to isolate. Service tests check whole game flows.
+
+## What I took away
+
+- **Tests are a design tool.** Writing the test first forced us to decide what each class was responsible for.
+- **CI changes behaviour.** When every push is checked, broken builds get fixed in minutes, not days.
+- **Plans meet reality.** Gradle, Git workflows and dividing responsibilities in a team of five were harder than any
+  algorithm in the game.

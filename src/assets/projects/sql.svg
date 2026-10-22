@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <g class="t-edge">
+    <path d="M90 34 L125 34 L125 66"/>
+    <path d="M90 82 L125 82"/>
+    <path d="M195 82 L230 82"/>
+    <path d="M195 74 L212 74 L212 34 L230 34"/>
+    <path d="M160 94 L160 130"/>
+    <path d="M265 94 L265 130"/>
+    <path d="M230 142 L195 142"/>
+    <path d="M125 142 L90 142"/>
+  </g>
+  <rect class="t-box" x="16" y="22" width="74" height="24" rx="4"/>
+  <text class="t-name" x="53" y="38" text-anchor="middle">Vehicle</text>
+  <rect class="t-box" x="16" y="70" width="74" height="24" rx="4"/>
+  <text class="t-name" x="53" y="86" text-anchor="middle">Stop</text>
+  <rect class="t-box-accent" x="125" y="66" width="70" height="28" rx="4"/>
+  <text class="t-name-strong" x="160" y="84" text-anchor="middle">Route</text>
+  <rect class="t-box" x="230" y="22" width="74" height="24" rx="4"/>
+  <text class="t-name" x="267" y="38" text-anchor="middle">Zone</text>
+  <rect class="t-box" x="230" y="70" width="74" height="24" rx="4"/>
+  <text class="t-name" x="267" y="86" text-anchor="middle">Run</text>
+  <rect class="t-box" x="125" y="130" width="70" height="24" rx="4"/>
+  <text class="t-name" x="160" y="146" text-anchor="middle">Pass</text>
+  <rect class="t-box" x="230" y="130" width="74" height="24" rx="4"/>
+  <text class="t-name" x="267" y="146" text-anchor="middle">Ticket</text>
+  <rect class="t-box" x="16" y="130" width="74" height="24" rx="4"/>
+  <text class="t-name" x="53" y="146" text-anchor="middle">Owner</text>
+  <text class="t-label" x="16" y="172">E-R schema → SQL tables, triggers</text>
+</svg>

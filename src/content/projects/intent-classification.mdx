@@ -1,0 +1,106 @@
+---
+title: When is prompting an LLM worth it?
+summary: Six intent classifiers on CLINC150, from TF-IDF to LLM prompting — and what each one costs.
+kicker: Dialogue Intent Classification · 2026
+date: April 2026
+team: with Mohamed Almahdi and Nicolas Braga · Large-Scale Generative Models course, IP Paris
+role: Comparison & evaluation — I built the shared pipeline that scores every approach with the same metrics, and wrote the comparative analysis of accuracy, macro-F1, inference time, cost and out-of-scope robustness
+stack: [Mistral API, Hugging Face Transformers, BERT, scikit-learn, Python]
+links:
+  - { label: Full report (PDF), href: /files/dialogue-intent-classification.pdf }
+---
+
+import ResultsChart from '../../components/ResultsChart.astro';
+
+<div class="tldr">
+
+**TL;DR**
+- With no training at all, a carefully prompted LLM reached **76% accuracy** on a 151-class intent benchmark.
+- **Rewording the prompt alone was worth +6 points** — as much as many architectural changes.
+- A two-stage *targeted few-shot* pipeline cut the in-context examples from 453 to 15 per query.
+- But the classical models stayed competitive at a tiny fraction of the cost and latency, and **no LLM strategy learned to say "I don't know"**.
+
+</div>
+
+## The problem
+
+Every assistant that books flights or moves money has to answer one question first: *what does the user want?*
+"Book a flight to Paris tomorrow" should map to `book_flight`; "how do I say hello in Spanish" to `translate`.
+
+We used [CLINC150](https://github.com/clinc/oos-eval), a standard benchmark with **150 intents across 10 domains** plus an
+*out-of-scope* class for requests the system shouldn't handle. It is hard for three reasons: many intents are near-twins
+(`cancel` vs. `cancel_reservation`), real systems must recognise when a request fits *no* intent, and every approach
+trades accuracy against data, compute and money in a different way.
+
+## Three ways to solve it
+
+1. **TF-IDF + logistic regression** — a bag-of-words baseline: cheap, fast and interpretable.
+2. **Fine-tuned BERT** — contextual embeddings, trained end-to-end on the labelled data.
+3. **Prompting an LLM** (Mistral-small via API) — no training data at all, only instructions and, at most, a handful of examples.
+
+The interesting part was the third one, so we iterated on it in steps.
+
+## Iterating on the prompt
+
+**Zero-shot.** The model gets the 151 intent names and the user message. Three wordings of the *same* instruction gave
+65%, 71% and 69% accuracy. The winner simply framed the model as a classifier and was strict about the output format:
+
+```text
+You are an intent classification system.
+Classify this message into one of these intents: [151 intent names]
+You MUST choose exactly one intent. Do NOT add explanations.
+Reply with only the intent name.
+```
+
+**Targeted few-shot.** Classic few-shot would need 3 examples × 151 intents = 453 examples in every prompt — too much for
+the API's context limits. So we split it into two calls: a zero-shot call first narrows the field to the **5 most likely
+intents**, then a second call shows **3 examples for each candidate** (15 in total) and asks the model to choose.
+
+**Chain-of-thought.** The model reasons in three steps (topic → user goal → best intent) before answering.
+No examples needed, and almost as good as few-shot.
+
+<ResultsChart
+  title="Accuracy of each LLM strategy (Mistral-small, 500 test utterances)"
+  min={50}
+  max={80}
+  rows={[
+    { label: 'Zero-shot, first prompt', value: 65.0, note: 'baseline' },
+    { label: 'Zero-shot, reworded', value: 71.0, note: '+6.0 pts, wording only' },
+    { label: 'Targeted few-shot v1', value: 74.2, note: '+9.2 pts' },
+    { label: 'Targeted few-shot v2', value: 76.0, note: '+11.0 pts, best' },
+    { label: 'Chain-of-thought', value: 75.8, note: '+10.8 pts, no examples' },
+  ]}
+  reference={{ label: 'BERT', value: 75.0 }}
+  caption="Each bar builds on the previous approach. The dashed line marks the fine-tuned BERT model, evaluated on the full test set."
+/>
+
+## The trade-off
+
+| | Classical (TF-IDF / BERT) | Zero-shot LLM | Few-shot / CoT LLM |
+|---|---|---|---|
+| Accuracy | 75% | 65–71% | 74–76% |
+| Training data needed | yes | no | no |
+| Latency per query | < 1 ms | ~1–2 s | ~2–5 s |
+| Adding a new intent | retrain | edit the prompt | prompt + examples |
+| Recognising out-of-scope | confidence threshold | poor | poor |
+
+The best LLM pipeline edges out the classical models, but it is thousands of times slower per query and needs two API
+calls per message. Where LLMs really shine is **flexibility**: a new intent is a prompt edit, not a retraining run.
+
+## What I took away
+
+- **Wording is a hyperparameter.** Six points from rephrasing one sentence is a reminder to treat prompts like code:
+  version them and evaluate every change.
+- **LLMs don't abstain.** Asked to pick an intent, the model always picks one — out-of-scope requests were almost always
+  forced into some in-scope label. Abstention needs an explicit mechanism, not a better prompt.
+- **Different models, different blind spots.** LLMs failed more on abstract intents (`meaning_of_life`), classical
+  models on fine-grained siblings within a domain. That points to an ensemble rather than a winner.
+- **Errors come from ambiguity, not from data.** Per-intent accuracy didn't correlate with the number of examples:
+  the hard intents are the semantically close ones.
+
+## Limitations and next steps
+
+API rate limits restricted the LLM experiments to 500 test utterances, while the classical models were evaluated on all
+5,500, so the head-to-head comparison is indicative rather than exact. Next, I'd select few-shot examples by embedding
+similarity instead of a first LLM call, try larger models, and instruction-tune a small open model on CLINC150 to get the
+flexibility of prompting at the cost of a classifier.

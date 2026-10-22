@@ -1,0 +1,71 @@
+---
+title: Ray Tracer in C
+summary: Rendering scenes of coloured spheres from scratch — vector maths, memory-mapped output and OpenMP.
+kicker: Parallel programming · 2025
+date: '2025'
+role: Sole author
+stack: [C, OpenMP, mmap, Make]
+links: []
+---
+
+import { Image } from 'astro:assets';
+import raytracerImage from '../../assets/projects/raytracer.png';
+
+<div class="tldr">
+
+**TL;DR**
+- A ray tracer written in plain C: one ray per pixel, intersected with every sphere in the scene.
+- Rendering is parallelised with a single **OpenMP** directive; output is written as a binary PPM through **mmap**.
+- Timing experiments showed that the simplest parallel schedule was also the fastest.
+
+</div>
+
+<Image src={raytracerImage} alt="Coloured spheres rendered by the ray tracer, nearer spheres hiding the ones behind" width={720} />
+
+## How it works
+
+1. **Rays.** The camera sits at the origin. For every pixel, a ray starts from the camera and passes through the
+   corresponding point of a *viewport*, a rectangle placed in front of the camera at distance *z*.
+2. **Intersections.** For each sphere, the ray hits it where *t* solves
+   `(V·V)t² − 2(C·V)t + (C·C − r²) = 0`, with *V* the ray direction, *C* the centre and *r* the radius.
+3. **Colour.** The pixel takes the colour of the nearest sphere hit, or the background colour if there is none.
+
+Scenes are described in a small text format:
+
+```text
+VP 2 1.25 1          # viewport width, height and distance
+BG 255 255 255       # background colour
+OBJ_N 7              # number of spheres
+S 0 0 5 1 255 0 0    # sphere: centre x y z, radius, colour R G B
+```
+
+## Code structure
+
+- `vector.c` — a 3D vector type and its operations: sum, difference, dot product, scaling, normalisation.
+- `scene.c` — loading a scene from file, with checks and cleanup on every error path; the ray–sphere intersection and the
+  tracing loop. Colours are packed structs, so a row of pixels is exactly three bytes per pixel.
+- `ppm.c` — the image is written as a binary PPM (P6): the file is sized, mapped into memory with `mmap`, and pixels are
+  written straight into it.
+- `main.c` — command line, orchestration and parallelism.
+
+## Parallelisation
+
+Every pixel is independent, so the double loop over rows and columns is parallelised with:
+
+```c
+#pragma omp parallel for collapse(2)
+for (int j = 0; j < height; j++)
+    for (int i = 0; i < width; i++)
+        /* compute the colour of pixel (i, j) */
+```
+
+I timed several variants. Dynamic scheduling brought no improvement: every pixel costs about the same, so there is no
+load imbalance for it to fix, only overhead. `collapse(2)` alone was the best option.
+
+## What I took away
+
+- **Measure before optimising.** The "smarter" schedule was slower; only timing showed it.
+- **Memory layout is part of the algorithm.** Packed colours and a memory-mapped file make the output step a plain write
+  into an array.
+- **C forces you to own every resource.** Each allocation needed a matching free on every error path, which made me
+  much more careful about failure handling.

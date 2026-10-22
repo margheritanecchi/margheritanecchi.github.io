@@ -1,0 +1,487 @@
+---
+// Interactive graph of the site content, drawn on a canvas.
+// Node positions come from graph-layout.json; nodes missing from it are placed by a force simulation.
+// In dev mode (npm run dev) the graph is a layout editor: drag nodes and press "Save layout".
+import { topics, publications, experience, projects } from '../data/content';
+import layout from '../data/graph-layout.json';
+
+const nodes = [
+  { id: 'me', label: 'Margherita', type: 'me' },
+  ...topics.map((t) => ({ id: t.id, label: t.label, type: 'topic' })),
+  ...publications.map((p) => ({ id: p.id, label: p.graphLabel, type: 'publication', href: `#${p.id}` })),
+  ...experience.map((e) => ({ id: e.id, label: e.org, type: 'experience', href: `#${e.id}` })),
+  ...projects.map((p) => ({ id: p.id, label: p.title, type: 'project', href: `#${p.id}` })),
+];
+
+const links = [
+  ...topics.map((t) => ({ source: 'me', target: t.id })),
+  ...[...publications, ...experience, ...projects].flatMap((item) =>
+    item.topics.map((topic) => ({ source: item.id, target: topic })),
+  ),
+];
+
+const legend = [
+  { type: 'topic', label: 'topic' },
+  { type: 'publication', label: 'publication' },
+  { type: 'experience', label: 'experience' },
+  { type: 'project', label: 'project' },
+];
+
+const editable = import.meta.env.DEV;
+---
+
+<figure class="kg">
+  <canvas
+    class="kg-canvas"
+    data-graph={JSON.stringify({ nodes, links, layout })}
+    data-edit={String(editable)}
+    aria-label="Graph connecting my research topics, publications, experience and projects"
+    role="img"></canvas>
+  <figcaption class="kg-legend">
+    {legend.map((item) => <span><i class={`dot dot-${item.type}`}></i>{item.label}</span>)}
+    <span class="kg-hint">drag the nodes · click to jump</span>
+  </figcaption>
+  {
+    editable && (
+      <div class="kg-editor">
+        <span>Layout editor (only visible in dev): drag nodes, then save.</span>
+        <button type="button" data-action="save">Save layout</button>
+        <button type="button" data-action="auto">Auto-arrange</button>
+        <span class="kg-editor-msg" aria-live="polite"></span>
+      </div>
+    )
+  }
+</figure>
+
+<script>
+  import daisySvg from '../assets/daisy.svg?raw';
+
+  interface GraphNode {
+    id: string;
+    label: string;
+    type: string;
+    href?: string;
+    x: number; // current position, in pixels from the canvas center
+    y: number;
+    vx: number;
+    vy: number;
+    hx: number; // home position, normalized to [-1, 1] of the half width/height
+    hy: number;
+    pinned: boolean;
+    labelWidth: number;
+  }
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.kg-canvas')!;
+  const ctx = canvas.getContext('2d')!;
+  const data = JSON.parse(canvas.dataset.graph!);
+  const savedLayout: Record<string, [number, number]> = data.layout;
+  const editable = canvas.dataset.edit === 'true';
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const RADIUS: Record<string, number> = { me: 16, topic: 7, publication: 6, experience: 5, project: 5 };
+  const DAISY_WIDTH = 40; // the "me" node is drawn as the daisy logo, this wide in pixels
+
+  // The logo SVG holds one path, placed in its viewBox by a potrace translate/scale transform
+  const [, , daisyW, daisyH] = daisySvg.match(/viewBox="([^"]+)"/)![1].split(' ').map(Number);
+  const [tx0, ty0, sx0, sy0] = daisySvg
+    .match(/translate\(([^,]+),([^)]+)\) scale\(([^,]+),([^)]+)\)/)!
+    .slice(1)
+    .map(Number);
+  const daisyPath = new Path2D(daisySvg.match(/ d="([^"]+)"/)![1]);
+  const LINK_LENGTH: Record<string, number> = { me: 150, other: 95 };
+  const LABEL_HEIGHT = 26;
+
+  let width = 0;
+  let height = 0;
+  let homesReady = false;
+  const colors: Record<string, string> = {};
+
+  const nodes: GraphNode[] = data.nodes.map((n: GraphNode) => ({
+    ...n,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    hx: 0,
+    hy: 0,
+    pinned: false,
+    labelWidth: 0,
+  }));
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const links = data.links.map((l: { source: string; target: string }) => ({
+    source: byId.get(l.source)!,
+    target: byId.get(l.target)!,
+  }));
+  const neighbors = new Map<string, Set<string>>(nodes.map((n) => [n.id, new Set([n.id])]));
+  for (const l of links) {
+    neighbors.get(l.source.id)!.add(l.target.id);
+    neighbors.get(l.target.id)!.add(l.source.id);
+  }
+
+  let hovered: GraphNode | null = null;
+  let dragged: GraphNode | null = null;
+  let pointerStart = { x: 0, y: 0 };
+  let running = false;
+
+  // ---------- Geometry helpers ----------
+
+  function clampX(n: GraphNode, x: number) {
+    const maxX = width / 2 - Math.max(16, n.labelWidth / 2 + 8);
+    return Math.max(-maxX, Math.min(maxX, x));
+  }
+
+  function clampY(n: GraphNode, y: number) {
+    const r = RADIUS[n.type];
+    return Math.max(-height / 2 + r + 24, Math.min(height / 2 - r - 10, y));
+  }
+
+  function homeX(n: GraphNode) {
+    return clampX(n, n.hx * (width / 2));
+  }
+
+  function homeY(n: GraphNode) {
+    return clampY(n, n.hy * (height / 2));
+  }
+
+  function setHomeFromPosition(n: GraphNode) {
+    n.hx = n.x / (width / 2);
+    n.hy = n.y / (height / 2);
+  }
+
+  // ---------- Initial layout: force simulation for nodes without a saved position ----------
+
+  function simulationTick(alpha: number) {
+    const scale = Math.min(width, height) / 480;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i];
+        const b = nodes[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d2 = Math.max(dx * dx + dy * dy, 64);
+        const force = ((4200 * scale * scale) / d2) * alpha;
+        const d = Math.sqrt(d2);
+        a.vx -= (dx / d) * force;
+        a.vy -= (dy / d) * force;
+        b.vx += (dx / d) * force;
+        b.vy += (dy / d) * force;
+
+        // Label collision: push apart nodes whose labels would overlap
+        const overlapX = (a.labelWidth + b.labelWidth) / 2 + 8 - Math.abs(dx);
+        const overlapY = LABEL_HEIGHT - Math.abs(dy);
+        if (overlapX > 0 && overlapY > 0) {
+          const push = Math.min(overlapX, overlapY) * 0.08;
+          const sy = dy === 0 ? (i % 2 ? 1 : -1) : Math.sign(dy);
+          a.vy -= sy * push;
+          b.vy += sy * push;
+          if (overlapX < overlapY) {
+            const sx = dx === 0 ? 1 : Math.sign(dx);
+            a.vx -= sx * push;
+            b.vx += sx * push;
+          }
+        }
+      }
+    }
+    for (const { source, target } of links) {
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const rest = (source.type === 'me' ? LINK_LENGTH.me : LINK_LENGTH.other) * scale;
+      const force = (d - rest) * 0.03 * alpha;
+      source.vx += (dx / d) * force;
+      source.vy += (dy / d) * force;
+      target.vx -= (dx / d) * force;
+      target.vy -= (dy / d) * force;
+    }
+    for (const n of nodes) {
+      if (n.pinned) {
+        n.vx = n.vy = 0;
+        continue;
+      }
+      n.vx = (n.vx - n.x * 0.0015 * alpha) * 0.82;
+      n.vy = (n.vy - n.y * 0.0015 * alpha) * 0.82;
+      n.x = clampX(n, n.x + n.vx);
+      n.y = clampY(n, n.y + n.vy);
+    }
+  }
+
+  function computeHomes(useSaved: boolean) {
+    nodes.forEach((n, i) => {
+      const saved = useSaved ? savedLayout[n.id] : undefined;
+      if (saved) {
+        [n.hx, n.hy] = saved;
+        n.x = homeX(n);
+        n.y = homeY(n);
+        n.pinned = true;
+      } else {
+        // Start on concentric rings, then let the simulation spread them out
+        const angle = (i / nodes.length) * Math.PI * 2;
+        const ring = n.type === 'me' ? 0 : n.type === 'topic' ? 110 : 200;
+        n.x = Math.cos(angle) * ring;
+        n.y = Math.sin(angle) * ring;
+        n.pinned = n.type === 'me';
+      }
+      n.vx = n.vy = 0;
+    });
+    let alpha = 1;
+    for (let i = 0; i < 600; i++) {
+      simulationTick(alpha);
+      alpha *= 0.99;
+    }
+    for (const n of nodes) {
+      setHomeFromPosition(n);
+      n.vx = n.vy = 0;
+    }
+    homesReady = true;
+  }
+
+  // ---------- Drawing ----------
+
+  function readColors() {
+    const style = getComputedStyle(document.documentElement);
+    for (const name of ['text', 'muted', 'line', 'surface', 'me', 'topic', 'publication', 'experience', 'project']) {
+      colors[name] = style.getPropertyValue(`--kg-${name}`).trim() || style.getPropertyValue(`--${name}`).trim();
+    }
+  }
+
+  function labelFont(n: GraphNode, strong: boolean) {
+    return `${strong ? 600 : 400} ${n.type === 'me' ? 13 : 11}px "JetBrains Mono", ui-monospace, monospace`;
+  }
+
+  function measureLabels() {
+    for (const n of nodes) {
+      ctx.font = labelFont(n, true);
+      n.labelWidth = ctx.measureText(n.label).width;
+    }
+  }
+
+  function drawDaisy(x: number, y: number, size: number) {
+    // Cover the links behind the flower, so they don't show through the petals
+    ctx.beginPath();
+    ctx.arc(x, y, size * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = colors.surface;
+    ctx.fill();
+
+    const scale = size / daisyW;
+    ctx.save();
+    ctx.translate(x - size / 2, y - (daisyH * scale) / 2);
+    ctx.scale(scale, scale);
+    ctx.translate(tx0, ty0);
+    ctx.scale(sx0, sy0);
+    ctx.fillStyle = colors.me;
+    ctx.fill(daisyPath);
+    ctx.restore();
+  }
+
+  function draw() {
+    const cx = width / 2;
+    const cy = height / 2;
+    const focus = hovered ? neighbors.get(hovered.id)! : null;
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.lineWidth = 1;
+    for (const { source, target } of links) {
+      const active = hovered && (source === hovered || target === hovered);
+      ctx.strokeStyle = active ? colors[hovered!.type] : colors.line;
+      ctx.globalAlpha = focus && !active ? 0.35 : 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + source.x, cy + source.y);
+      ctx.lineTo(cx + target.x, cy + target.y);
+      ctx.stroke();
+    }
+
+    for (const n of nodes) {
+      const dimmed = focus && !focus.has(n.id);
+      ctx.globalAlpha = dimmed ? 0.25 : 1;
+      const r = RADIUS[n.type];
+      if (n.type === 'me') {
+        drawDaisy(cx + n.x, cy + n.y, n === hovered ? DAISY_WIDTH * 1.12 : DAISY_WIDTH);
+      } else {
+        ctx.beginPath();
+        ctx.arc(cx + n.x, cy + n.y, n === hovered ? r + 2 : r, 0, Math.PI * 2);
+        ctx.fillStyle = colors[n.type];
+        ctx.fill();
+        ctx.strokeStyle = colors.surface;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      const strong = n.type === 'me' || n.type === 'topic' || (focus && focus.has(n.id));
+      ctx.font = labelFont(n, !!strong);
+      ctx.fillStyle = strong ? colors.text : colors.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(n.label, cx + n.x, cy + n.y - r - 6);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---------- Animation: every node springs back to its home ----------
+
+  function step() {
+    let moving = false;
+    // While dragging, linked nodes follow the dragged one a little, like an elastic band
+    const pull = dragged ? { x: dragged.x - homeX(dragged), y: dragged.y - homeY(dragged) } : null;
+    const linked = dragged ? neighbors.get(dragged.id)! : null;
+
+    for (const n of nodes) {
+      if (n === dragged) continue;
+      let tx = homeX(n);
+      let ty = homeY(n);
+      if (pull && linked!.has(n.id)) {
+        tx += pull.x * 0.2;
+        ty += pull.y * 0.2;
+      }
+      if (reducedMotion) {
+        n.x = tx;
+        n.y = ty;
+        continue;
+      }
+      n.vx = (n.vx + (tx - n.x) * 0.12) * 0.72;
+      n.vy = (n.vy + (ty - n.y) * 0.12) * 0.72;
+      n.x += n.vx;
+      n.y += n.vy;
+      if (Math.abs(tx - n.x) > 0.2 || Math.abs(ty - n.y) > 0.2 || Math.abs(n.vx) > 0.05 || Math.abs(n.vy) > 0.05) {
+        moving = true;
+      }
+    }
+    draw();
+    if (moving || dragged) {
+      requestAnimationFrame(step);
+    } else {
+      running = false;
+    }
+  }
+
+  function wake() {
+    if (!running) {
+      running = true;
+      requestAnimationFrame(step);
+    }
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    width = rect.width;
+    height = rect.height;
+    if (!width || !height) return;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    measureLabels();
+    if (!homesReady) computeHomes(true);
+    for (const n of nodes) {
+      n.x = homeX(n);
+      n.y = homeY(n);
+    }
+    draw();
+  }
+
+  // ---------- Pointer interaction ----------
+
+  function pointerPosition(event: PointerEvent) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left - width / 2, y: event.clientY - rect.top - height / 2 };
+  }
+
+  function nodeAt(event: PointerEvent): GraphNode | null {
+    const { x, y } = pointerPosition(event);
+    let best: GraphNode | null = null;
+    let bestDist = Infinity;
+    for (const n of nodes) {
+      const d = Math.hypot(n.x - x, n.y - y);
+      if (d < RADIUS[n.type] + 10 && d < bestDist) {
+        best = n;
+        bestDist = d;
+      }
+    }
+    return best;
+  }
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (dragged) {
+      const { x, y } = pointerPosition(event);
+      dragged.x = clampX(dragged, x);
+      dragged.y = clampY(dragged, y);
+      return;
+    }
+    const n = nodeAt(event);
+    if (n !== hovered) {
+      hovered = n;
+      canvas.style.cursor = n ? (n.href ? 'pointer' : 'grab') : 'default';
+      if (!running) draw();
+    }
+  });
+
+  canvas.addEventListener('pointerdown', (event) => {
+    const n = nodeAt(event);
+    if (!n) return;
+    dragged = n;
+    hovered = n;
+    pointerStart = { x: event.clientX, y: event.clientY };
+    canvas.setPointerCapture(event.pointerId);
+    wake();
+  });
+
+  canvas.addEventListener('pointerup', (event) => {
+    if (!dragged) return;
+    const moved = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+    const n = dragged;
+    dragged = null;
+    if (moved < 5) {
+      if (n.href) location.hash = n.href;
+    } else if (editable) {
+      // In the editor, the node's new home is where it was dropped
+      setHomeFromPosition(n);
+      setEditorMessage('unsaved changes');
+    }
+    wake();
+  });
+
+  canvas.addEventListener('pointerleave', () => {
+    if (dragged) return;
+    hovered = null;
+    if (!running) draw();
+  });
+
+  // ---------- Layout editor (dev only) ----------
+
+  const editorMessage = document.querySelector<HTMLElement>('.kg-editor-msg');
+
+  function setEditorMessage(text: string) {
+    if (editorMessage) editorMessage.textContent = text;
+  }
+
+  document.querySelector('.kg-editor [data-action="save"]')?.addEventListener('click', async () => {
+    const layout = Object.fromEntries(
+      nodes.map((n) => [n.id, [Math.round(n.hx * 1000) / 1000, Math.round(n.hy * 1000) / 1000]]),
+    );
+    const response = await fetch('/__graph-layout', { method: 'POST', body: JSON.stringify(layout) });
+    setEditorMessage(response.ok ? 'saved ✓' : `error: ${await response.text()}`);
+  });
+
+  document.querySelector('.kg-editor [data-action="auto"]')?.addEventListener('click', () => {
+    computeHomes(false);
+    for (const n of nodes) {
+      n.x = homeX(n);
+      n.y = homeY(n);
+    }
+    draw();
+    setEditorMessage('auto-arranged (not saved yet)');
+  });
+
+  // ---------- Start ----------
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    readColors();
+    draw();
+  });
+
+  readColors();
+  new ResizeObserver(resize).observe(canvas);
+  // Label widths depend on the web font, so measure again once it has loaded
+  document.fonts.ready.then(() => {
+    measureLabels();
+    if (width) draw();
+  });
+</script>

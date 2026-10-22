@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <text class="t-label" x="16" y="22">assembly</text>
+  <text class="t-label" x="196" y="22">memory</text>
+  <rect class="t-box" x="16" y="32" width="128" height="122" rx="6"/>
+  <text class="t-code" x="28" y="54"><tspan class="t-code-accent">START</tspan> INP</text>
+  <text class="t-code" x="28" y="74">      STA X</text>
+  <text class="t-code" x="28" y="94">      OUT</text>
+  <text class="t-code" x="28" y="114">      HLT</text>
+  <text class="t-code" x="28" y="134"><tspan class="t-code-accent">X</tspan>     DAT</text>
+  <g class="t-edge"><path d="M152 93 L184 93"/><path d="M178 88 L184 93 L178 98"/></g>
+  <g>
+    <rect class="t-box-accent" x="196" y="32" width="50" height="22" rx="4"/>
+    <rect class="t-box" x="252" y="32" width="50" height="22" rx="4"/>
+    <rect class="t-box" x="196" y="64" width="50" height="22" rx="4"/>
+    <rect class="t-box" x="252" y="64" width="50" height="22" rx="4"/>
+    <rect class="t-box" x="196" y="96" width="50" height="22" rx="4"/>
+    <rect class="t-box" x="252" y="96" width="50" height="22" rx="4"/>
+  </g>
+  <text class="t-code" x="221" y="47" text-anchor="middle">901</text>
+  <text class="t-code" x="277" y="47" text-anchor="middle">304</text>
+  <text class="t-code" x="221" y="79" text-anchor="middle">902</text>
+  <text class="t-code" x="277" y="79" text-anchor="middle">000</text>
+  <text class="t-code" x="221" y="111" text-anchor="middle">000</text>
+  <text class="t-code" x="277" y="111" text-anchor="middle">…</text>
+  <text class="t-label" x="196" y="138">acc = 42</text>
+  <text class="t-label" x="196" y="154">out → [42]</text>
+</svg>

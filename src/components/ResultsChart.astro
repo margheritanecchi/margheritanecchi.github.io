@@ -1,0 +1,108 @@
+---
+// Horizontal bar chart for a single series of results, with an optional reference line.
+interface Row {
+  label: string;
+  value: number;
+  note?: string;
+}
+
+interface Props {
+  title: string;
+  rows: Row[];
+  min: number;
+  max: number;
+  unit?: string;
+  reference?: { label: string; value: number };
+  caption?: string;
+}
+
+const { title, rows, min, max, unit = '%', reference, caption } = Astro.props;
+const position = (value: number) => `${((value - min) / (max - min)) * 100}%`;
+const ticks = Array.from({ length: 5 }, (_, i) => min + ((max - min) / 4) * i);
+---
+
+<figure class="chart">
+  <figcaption class="chart-title">{title}</figcaption>
+  <div class="chart-plot">
+    {
+      reference && (
+        <span class="chart-reference" style={`--pos: ${(reference.value - min) / (max - min)}`}>
+          <span>
+            {reference.label} {reference.value.toFixed(1)}
+            {unit}
+          </span>
+        </span>
+      )
+    }
+    {
+      rows.map((row) => (
+        <div class="chart-row" tabindex="0">
+          <span class="chart-label">{row.label}</span>
+          <span class="chart-track">
+            <span class="chart-dot" style={`left: ${position(row.value)}`} />
+            <span class="chart-value" style={`left: ${position(row.value)}`}>
+              {row.value.toFixed(1)}
+              {unit}
+            </span>
+            <span class="chart-tooltip" role="tooltip">
+              <strong>{row.label}</strong>
+              <span>
+                {row.value.toFixed(1)}
+                {unit}
+                {row.note && ` · ${row.note}`}
+              </span>
+            </span>
+          </span>
+        </div>
+      ))
+    }
+    <div class="chart-row chart-axis" aria-hidden="true">
+      <span class="chart-label"></span>
+      <span class="chart-track">
+        {
+          ticks.map((tick) => (
+            <span class="chart-tick" style={`left: ${position(tick)}`}>
+              {tick}
+              {unit}
+            </span>
+          ))
+        }
+      </span>
+    </div>
+  </div>
+  {caption && <p class="chart-caption">{caption}</p>}
+  <details class="chart-table">
+    <summary>Show as table</summary>
+    <table>
+      <thead>
+        <tr><th>Approach</th><th>Value</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((row) => (
+            <tr>
+              <td>{row.label}</td>
+              <td>
+                {row.value.toFixed(1)}
+                {unit}
+              </td>
+              <td>{row.note ?? ''}</td>
+            </tr>
+          ))
+        }
+        {
+          reference && (
+            <tr>
+              <td>{reference.label}</td>
+              <td>
+                {reference.value.toFixed(1)}
+                {unit}
+              </td>
+              <td>reference</td>
+            </tr>
+          )
+        }
+      </tbody>
+    </table>
+  </details>
+</figure>

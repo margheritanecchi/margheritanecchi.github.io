@@ -1,0 +1,70 @@
+---
+title: Decentralizing Navigation
+summary: How do ants find their way home? Replacing a hard-coded "GPS" in a foraging simulation with a pheromone the ants lay themselves.
+kicker: Complex systems · 2025
+date: November 2025
+team: with Nikola Dobričić, Tia Manoukian and Ada Yetis · Emergence in Complex Systems course, IP Paris
+stack: [Python, EvoLife, agent-based modelling]
+links:
+  - { label: Report (PDF), href: /files/decentralizing-navigation.pdf }
+---
+
+import { Image } from 'astro:assets';
+import antsImage from '../../assets/projects/ants.png';
+
+<div class="tldr">
+
+**TL;DR**
+- In the standard ant foraging simulation, an ant with food "magically" knows the coordinates of its nest.
+- We replaced that with a third pheromone, the **colony pheromone**, laid while exploring and followed back uphill.
+- Homing emerged from local rules alone — and so did **ant mills**, the circular traps that real ants fall into too.
+- Short-term memory and a little randomness made the system stable.
+
+</div>
+
+## The problem
+
+Foraging simulations usually model two pheromones: one marking the way to food, one marking explored areas. But the
+journey home is hard-coded: the ant subtracts its position from the nest's and walks in that direction. Real ants have
+no global coordinates. We wanted homing to *emerge* from what an ant can actually sense.
+
+Biology offered several candidates — visual landmarks, the smell of the area around the nest, home-range marking — and
+we chose the most common one in ants: following a trail laid during exploration.
+
+## The colony pheromone
+
+- **Emission.** Each ant leaves the nest with a stock of 50,000 units of colony pheromone and deposits it as it explores,
+  losing 10 units per step. The trail is therefore stronger the closer it is to the nest.
+- **Following.** Once an ant finds food, it repeatedly moves to the neighbouring cell with the *highest* colony pheromone,
+  climbing the gradient back home while laying the food trail for the others.
+- **Evaporation.** A fixed percentage evaporates at every step, so old trails fade and relative concentrations stay meaningful.
+
+We also switched the simulation from moving one ant per step to moving all ants simultaneously, which is closer to reality
+and makes each time step easier to analyse.
+
+<Image src={antsImage} alt="Simulation snapshot: pheromone trails spreading from the nest towards yellow food sources" width={720} />
+
+## What went wrong, and how we fixed it
+
+| Problem | Cause | Fix |
+|---|---|---|
+| Pheromone piled up near the nest forever | linear evaporation is slower than deposition in busy areas | exponential evaporation: the more pheromone, the faster it fades |
+| Faint residues everywhere | exponential decay never reaches zero | a threshold that snaps values below 1 to zero |
+| Ants vibrating between two cells | "always climb" gets stuck in local maxima | a taboo list of the last 6 positions |
+| Groups of ants walking in circles | a loop reinforces itself the more it is walked | a 5% chance of a random move, plus tuning of deposit and evaporation |
+
+The circles were the most interesting finding. **Ant mills** are a documented phenomenon: army ants can follow each
+other in a circle until exhaustion. Pure gradient ascent with a self-reinforcing signal is inherently fragile, and our
+simulation reproduced it. Rather than forbid it with artificial rules, we tuned the parameters until milling became rare.
+
+## What I took away
+
+- **The intelligence is in the environment.** The colony pheromone works as an external, shared map: no single ant knows
+  where home is, but the colony does.
+- **Positive feedback needs noise.** Memory and a small amount of randomness were what kept local rules from locking the
+  system into loops.
+- **Decentralisation has a range.** Because the signal evaporates, an ant that wanders too far finds its trail gone.
+  Exploration must expand slowly, at the pace the pheromone network can sustain.
+
+Next steps we discussed: combining several homing mechanisms, as real ants seem to do, and adding competing colonies whose
+trails cross.

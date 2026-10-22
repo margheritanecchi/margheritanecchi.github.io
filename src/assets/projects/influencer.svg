@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <g class="t-edge">
+    <path d="M112 52 C126 52 126 80 138 80"/>
+    <path d="M112 128 C126 128 126 100 138 100"/>
+    <path d="M210 90 C222 90 222 40 232 40"/>
+    <path d="M210 90 L232 90"/>
+    <path d="M210 90 C222 90 222 140 232 140"/>
+  </g>
+  <rect class="t-box" x="12" y="34" width="100" height="36" rx="6"/>
+  <text class="t-name-strong" x="62" y="50" text-anchor="middle">tweet text</text>
+  <text class="t-tick" x="62" y="62" text-anchor="middle">CamemBERT</text>
+  <rect class="t-box" x="12" y="110" width="100" height="36" rx="6"/>
+  <text class="t-name-strong" x="62" y="126" text-anchor="middle">user profile</text>
+  <text class="t-tick" x="62" y="138" text-anchor="middle">23 features</text>
+  <rect class="t-box-accent" x="138" y="70" width="72" height="40" rx="6"/>
+  <text class="t-name-strong" x="174" y="87" text-anchor="middle">cross-</text>
+  <text class="t-name-strong" x="174" y="99" text-anchor="middle">attention</text>
+  <rect class="t-box-accent" x="232" y="27" width="78" height="26" rx="13"/>
+  <text class="t-name-strong" x="271" y="44" text-anchor="middle">influencer?</text>
+  <rect class="t-box" x="232" y="77" width="78" height="26" rx="13"/>
+  <text class="t-tick" x="271" y="94" text-anchor="middle">interaction</text>
+  <rect class="t-box" x="232" y="127" width="78" height="26" rx="13"/>
+  <text class="t-tick" x="271" y="144" text-anchor="middle">activity</text>
+  <text class="t-label" x="310" y="172" text-anchor="end">+ 2 auxiliary tasks</text>
+</svg>

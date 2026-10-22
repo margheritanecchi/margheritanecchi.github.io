@@ -1,0 +1,100 @@
+---
+title: When Words Hurt
+summary: Detecting misogyny in Italian tweets — and finding out how close a well-tuned random forest gets to a neural network.
+kicker: Bachelor thesis · 2025
+date: '2025'
+role: Sole author — data pipeline, preprocessing, every model, evaluation and error analysis. Bachelor's thesis, Università degli Studi di Trieste
+stack: [Python, scikit-learn, Keras, GloVe, spaCy, Hugging Face Transformers]
+links:
+  - { label: Thesis (EN), href: /files/bachelor-thesis-en.pdf }
+  - { label: Thesis (IT), href: /files/bachelor-thesis.pdf }
+---
+
+import ResultsChart from '../../components/ResultsChart.astro';
+
+<div class="tldr">
+
+**TL;DR**
+- Binary misogyny detection on **13,115 Italian tweets** from the AMI EVALITA 2020 shared task.
+- Five classical models on TF-IDF features against a **CNN on Twitter-trained GloVe embeddings**.
+- The CNN wins with **0.830 macro-F1** — but a tuned random forest reaches **0.829**, and an even higher AUC.
+- The interesting difference is not the score but the *errors*: the random forest reacts to trigger words and misses negation and sarcasm.
+
+</div>
+
+## The problem
+
+Online misogyny is rarely just a list of insults. Often it is carried by neutral words used in a pejorative context,
+by sarcasm, or by a threat phrased without a single vulgar word. The question of the thesis was simple: how well, and
+with which limits, can a text classifier recognise it in Italian social media language?
+
+I used the dataset of the [AMI task at EVALITA 2020](https://amievalita2020.github.io/): 13,115 tweets annotated by hand.
+I kept only the binary label (misogynistic or not): 58.4% of the tweets are non-misogynistic and 41.6% misogynistic, a
+mild imbalance that makes macro-F1 a better yardstick than accuracy.
+
+## Cleaning a very noisy language
+
+Tweets are full of slang, typos, emoji and abbreviations, so most of the work went into the preprocessing pipeline:
+
+- **Cleaning:** URLs and mentions replaced by placeholders, emoji collapsed into a single token, punctuation removed
+  except `!` and `?`, which carry emphasis.
+- **Normalisation:** lowercasing, a dictionary that expands common abbreviations (*xkè* → *perché*), and elongated words
+  shortened (*ciaooo* → *ciao*).
+- **Lemmatisation** with spaCy, so that all the forms of a verb or noun share one token.
+- **Disambiguation:** the step I found most interesting. Words like *cagna* mean "female dog" in one context and are a
+  slur in another. For a lexicon of such words I defined two textual "anchors", one neutral and one pejorative, and used
+  a zero-shot NLI model (mDeBERTa) to decide which anchor fits the tweet. The ambiguous word is then replaced by that
+  anchor, so the downstream models see the meaning, not just the word.
+
+The pipeline cut the vocabulary from 20,007 to 13,342 unique words (−33%) and the share of out-of-vocabulary tokens,
+measured against the AlBERTo vocabulary, from 18.3% to 10.8%.
+
+## Two families of models
+
+**Classical models on TF-IDF features.** Multinomial Naive Bayes, logistic regression, linear SVM, decision tree and
+random forest, each with a feature-selection step and tuned by grid search with 5-fold cross-validation on the training set.
+
+**A CNN on word embeddings.** Pretrained GloVe vectors learned on tweets (100 dimensions), kept trainable so they can
+adapt to the jargon of the dataset, followed by a 1D convolution, global max pooling, dropout and a sigmoid output.
+I deliberately kept it small to limit overfitting, and trained it with early stopping on a validation set.
+
+The data was split once, stratified, into 60% training, 20% validation and 20% test; the test set was used only for the
+final evaluation.
+
+<ResultsChart
+  title="Macro-F1 on the test set"
+  min={75}
+  max={85}
+  rows={[
+    { label: 'Multinomial Naive Bayes', value: 79.17 },
+    { label: 'Linear SVM', value: 80.41 },
+    { label: 'Logistic regression', value: 80.46 },
+    { label: 'Decision tree', value: 82.42 },
+    { label: 'Random forest', value: 82.91, note: 'best classical' },
+    { label: 'CNN + GloVe', value: 83.0, note: 'best overall' },
+  ]}
+  caption="Scores ×100. The random forest also has the highest AUC of all models (0.933 vs. 0.927 for the CNN)."
+/>
+
+## Same score, different mistakes
+
+The random forest's most important features are explicit insults and words that objectify the female body. That makes it
+an excellent detector of open abuse, and a fragile one everywhere else:
+
+- *"Beh, non mi sento sottomessa o malmenata"* ("Well, I don't feel subjugated or beaten up") is flagged as misogynistic:
+  the model reacts to *malmenata* and ignores the *non* in front of it.
+- *"Ti apro in due"* ("I'll split you in two") is missed: no single word is offensive, the violence is in the construction.
+
+The CNN reads short word sequences through its convolutions, so it can partly learn that a negation flips the meaning of
+the verb after it, and its fine-tuned embeddings pick up the dataset's slang. It is not immune to these errors, but it is
+better placed to handle them.
+
+## What I took away
+
+- **A strong baseline is a real result.** With careful preprocessing and feature selection, a random forest was within
+  0.001 macro-F1 of the neural model. Any claim that a model is "better" needs that baseline next to it.
+- **Look at the errors, not only the score.** Two models with the same F1 failed on very different tweets, and that tells
+  you much more about what they learned.
+- **Context is the hard part.** Negation, sarcasm and implicit threats are exactly where both models struggled. The natural
+  next step is contextual representations: using the hidden states of a pretrained language model as features, or
+  fine-tuning one directly — the direction I then followed in my master's.

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
+  <text class="t-label" x="16" y="22">accuracy on CLINC150 · 151 intents</text>
+  <line class="t-grid" x1="40" y1="150" x2="304" y2="150"/>
+  <line class="t-grid" x1="40" y1="95" x2="304" y2="95"/>
+  <text class="t-tick" x="16" y="153">60</text>
+  <text class="t-tick" x="16" y="98">70</text>
+  <text class="t-tick" x="16" y="43">80</text>
+  <line class="t-ref" x1="40" y1="67.5" x2="304" y2="67.5"/>
+  <text class="t-tick" x="44" y="80">BERT 75%</text>
+  <polyline class="t-series" points="62,122.5 120,89.5 178,72 236,62 294,63.1"/>
+  <circle class="t-dot" cx="62" cy="122.5" r="4"/>
+  <circle class="t-dot" cx="120" cy="89.5" r="4"/>
+  <circle class="t-dot" cx="178" cy="72" r="4"/>
+  <circle class="t-dot-accent" cx="236" cy="62" r="5"/>
+  <circle class="t-dot" cx="294" cy="63.1" r="4"/>
+  <text class="t-value" x="236" y="50" text-anchor="middle">76%</text>
+  <text class="t-tick" x="62" y="168" text-anchor="middle">zero-shot</text>
+  <text class="t-tick" x="120" y="168" text-anchor="middle">reworded</text>
+  <text class="t-tick" x="178" y="168" text-anchor="middle">few v1</text>
+  <text class="t-tick" x="236" y="168" text-anchor="middle">few v2</text>
+  <text class="t-tick" x="294" y="168" text-anchor="end">CoT</text>
+</svg>

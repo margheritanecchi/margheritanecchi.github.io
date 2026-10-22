@@ -1,0 +1,64 @@
+---
+title: LMC Simulator
+summary: An assembler and interpreter for the Little Man Computer, a minimal model of how a CPU runs a program.
+kicker: Programming · 2025
+date: '2025'
+role: Sole author
+stack: [Python]
+links: []
+---
+
+<div class="tldr">
+
+**TL;DR**
+- The **Little Man Computer** is a teaching model of a computer: 100 memory cells, one accumulator, ten instructions.
+- I wrote an **assembler** that turns LMC assembly into machine code and an **interpreter** that runs it.
+- Step-by-step execution, state inspection and precise errors make it usable for learning and debugging.
+
+</div>
+
+## The machine
+
+The LMC has 100 memory cells holding three-digit numbers, an accumulator, a program counter, an input queue and an
+output queue. Each instruction is a three-digit number: the first digit is the operation, the other two an address.
+
+| Instruction | Code | Meaning |
+|---|---|---|
+| `ADD x` / `SUB x` | 1xx / 2xx | add / subtract cell x to the accumulator |
+| `STA x` / `LDA x` | 3xx / 5xx | store / load the accumulator |
+| `BRA x` | 6xx | jump to x |
+| `BRZ x` / `BRP x` | 7xx / 8xx | jump if zero / if positive |
+| `INP` / `OUT` | 901 / 902 | read input / write output |
+| `HLT` | 000 | stop |
+| `DAT` | xxx | a data cell |
+
+## The assembler
+
+Programs are written with labels instead of addresses:
+
+```text
+START  INP          // read a number
+       BRZ END      // stop on 0
+       OUT          // echo it
+       BRA START
+END    HLT
+```
+
+The assembler works in two passes: the first records the address of every label, the second translates each instruction
+and resolves the labels. It ignores comments, case and extra whitespace.
+
+## The interpreter
+
+The `LMC` class can run a program to the end or execute **one instruction at a time**, exposing the accumulator, the
+program counter and the memory after each step. Arithmetic sets a flag on overflow and underflow, as on the original
+machine.
+
+## Errors as part of the design
+
+Every failure has its own exception, so a mistake in a program points to its cause: a label defined twice, a label that
+does not exist, an invalid instruction, a program larger than 100 cells, or a memory access out of range.
+
+## What I took away
+
+Writing both halves — translation and execution — made concrete how a program becomes numbers in memory and how a
+processor walks through them. It was also an exercise in designing a small, clean API with explicit, typed errors.

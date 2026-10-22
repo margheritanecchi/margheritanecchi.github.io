@@ -1,0 +1,23 @@
+# Dependencies and build output
+node_modules/
+dist/
+.astro/
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
+
+# Raw project material (the site only uses src/ and public/)
+/projects/
+
+# Personal PDFs in the root folder (the published ones are in public/files)
+/*.pdf

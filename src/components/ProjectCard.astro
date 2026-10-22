@@ -1,0 +1,28 @@
+---
+import { Image } from 'astro:assets';
+import type { Project } from '../data/content';
+
+type Props = Project;
+
+const { id, kicker, title, description, stack, image, imageAlt = '', links = [], page, featured } = Astro.props;
+// Imported SVGs are components (drawn inline, so they follow the theme); other images are ImageMetadata
+const Drawing = typeof image === 'function' ? image : null;
+---
+
+<article class:list={['card', { 'card-featured': featured }]} id={id}>
+  {
+    image && (
+      <div class="card-thumb">
+        {Drawing ? <Drawing aria-hidden="true" /> : <Image src={image as ImageMetadata} alt={imageAlt} width={640} />}
+      </div>
+    )
+  }
+  <p class="card-kicker">{kicker}</p>
+  <h3>{page ? <a href={page} class="card-link">{title}</a> : title}</h3>
+  <p>{description}</p>
+  <p class="stack">{stack}</p>
+  <p class="card-actions">
+    {page && <span class="card-cta">Read more →</span>}
+    {links.map((link) => <a href={link.href} class="tag">{link.label} ↗</a>)}
+  </p>
+</article>

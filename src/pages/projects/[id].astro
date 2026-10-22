@@ -1,0 +1,41 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({ params: { id: project.id }, props: { project } }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { title, summary, kicker, date, team, role, stack, links } = project.data;
+---
+
+<Base title={`${title} — Margherita Necchi`} description={summary}>
+  <article class="case-study">
+    <a href="/#projects" class="back">← All projects</a>
+    <header class="case-header">
+      <p class="eyebrow">{kicker}</p>
+      <h1>{title}</h1>
+      <p class="case-summary">{summary}</p>
+      <dl class="case-meta">
+        {team && <div><dt>Team</dt><dd>{team}</dd></div>}
+        {role && <div><dt>My role</dt><dd>{role}</dd></div>}
+        <div><dt>Date</dt><dd>{date}</dd></div>
+        <div><dt>Stack</dt><dd>{stack.join(' · ')}</dd></div>
+      </dl>
+      {
+        links.length > 0 && (
+          <p class="case-links">
+            {links.map((link) => <a href={link.href} class="tag">{link.label} ↗</a>)}
+          </p>
+        )
+      }
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+    <a href="/#projects" class="back">← All projects</a>
+  </article>
+</Base>

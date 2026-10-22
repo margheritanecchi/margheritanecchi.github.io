@@ -1,0 +1,77 @@
+---
+title: Influencer or observer?
+summary: Classifying the author of a tweet by combining what they write with how they behave on the platform.
+kicker: Influencer Classification · 2025
+date: '2025'
+role: Deep learning course challenge, IP Paris
+stack: [PyTorch, CamemBERT, Hugging Face Transformers, Optuna, scikit-learn]
+links: []
+---
+
+<div class="tldr">
+
+**TL;DR**
+- Binary task: was a French tweet written by an **influencer** or by an **observer**?
+- A multitask network that combines **23 engineered user features** with **CamemBERT embeddings** of the tweet through cross-attention.
+- Two auxiliary tasks act as regularisers for the main classifier.
+- Result in 5-fold cross-validation: **0.83 F1, 0.92 ROC-AUC, 84.7% accuracy**.
+
+</div>
+
+## The problem
+
+The challenge provided raw tweets in JSON lines, each with its text and the metadata of its author. The label says whether
+the author is an influencer or an observer. Neither source is enough on its own: the text tells you *what* someone says,
+the metadata tells you *how* they use the platform — how much they post, how often they are listed by others, whether they
+reply, mention and share links.
+
+## Features from behaviour
+
+From the metadata I engineered 23 features, chosen by exploring their correlation with the label. The strongest were the
+number of lists a user appears in, their total number of statuses, the ratio between activity and account age, whether
+the profile has a URL, a banner or default settings, and how varied their interactions are (replies, mentions, media,
+links). Count features were log-transformed and everything was standardised inside each cross-validation fold.
+
+## Features from text
+
+The text of each tweet goes through **CamemBERT**, a French BERT model, and its `[CLS]` vector (768 dimensions) is used
+as a fixed embedding of the tweet. Computing the embeddings once and storing them made every training run cheap.
+
+## The model
+
+```text
+tabular features ──► linear ─┐ query
+                             ├─► multi-head attention ──┐
+CamemBERT [CLS] ──► linear ──┘ key / value              ├─► concat ─► shared block ─┬─► influencer?        (main)
+                                                        │                          ├─► interaction type   (4 classes)
+tabular projection ─────────────────────────────────────┘                          └─► activity ratio     (regression)
+```
+
+Both inputs are projected into a shared space; the tabular representation acts as the query over the text. The result
+is concatenated with the tabular projection and passed through a shared dense block with three heads. The two auxiliary
+heads — predicting the user's interaction type and their activity ratio — push the shared block to learn a richer
+description of the user. The loss is the main binary loss plus 0.3 × each auxiliary loss.
+
+Learning rate, batch size, dropout and hidden size were tuned with **Optuna**, and the best configuration was trained with
+**stratified 5-fold cross-validation** and early stopping. The final decision threshold (0.42 instead of 0.5) was chosen on
+the out-of-fold predictions to maximise F1.
+
+## Results
+
+| Metric (out-of-fold, 5 folds) | Value |
+|---|---|
+| Accuracy | 84.7% |
+| ROC-AUC | 0.920 |
+| F1 | 0.832 |
+| Precision / recall | 0.853 / 0.812 |
+
+## What I took away
+
+- **Feature engineering still matters next to a transformer.** The behavioural features carry a lot of signal that a
+  sentence embedding cannot see.
+- **Auxiliary tasks are a cheap regulariser.** They come for free from the data you already have and give the shared
+  layers something more to learn than a single bit.
+- **Know what your attention is attending to.** With one text vector per tweet, the attention has a single key, so it
+  reduces to a learned projection of the text. To make it really attend, the next step is to feed it the full sequence of
+  token embeddings instead of only `[CLS]`, and to compare against a plain concatenation baseline to measure what the
+  fusion actually adds.
