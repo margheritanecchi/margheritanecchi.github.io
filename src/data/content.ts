@@ -17,7 +17,7 @@ export const profile = {
   tagline: 'AI · LLMs · NLP — MSc Data & AI, Institut Polytechnique de Paris',
   status: '', // set to a short text (e.g. 'Open to internships') to show a badge
   email: 'margherita.necchi@polytechnique.edu',
-  github: 'https://github.com/marghenecchi',
+  github: 'https://github.com/margheritanecchi',
   linkedin: 'https://www.linkedin.com/', // TODO: replace with your LinkedIn profile URL
   cv: '/files/cv-margherita-necchi.pdf',
 };

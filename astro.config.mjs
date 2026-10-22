@@ -39,7 +39,7 @@ const graphLayoutEditor = {
 
 export default defineConfig({
   // Public URL of the site once deployed on GitHub Pages
-  site: 'https://marghenecchi.github.io',
+  site: 'https://margheritanecchi.github.io',
   integrations: [mdx()],
   vite: { plugins: [graphLayoutEditor] },
 });
