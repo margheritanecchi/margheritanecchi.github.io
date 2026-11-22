@@ -14,7 +14,7 @@ import lmcImage from '../assets/projects/lmc.svg';
 
 export const profile = {
   name: 'Margherita Necchi',
-  tagline: 'AI · LLMs · NLP — MSc Data & AI, Institut Polytechnique de Paris',
+  tagline: 'AI · LLMs · NLP — MSc Data & AI, École polytechnique',
   status: '', // set to a short text (e.g. 'Open to internships') to show a badge
   email: 'margherita.necchi@polytechnique.edu',
   github: 'https://github.com/margheritanecchi',
@@ -90,7 +90,7 @@ export const experience: Experience[] = [
     org: 'YAGO Knowledge Base',
     role: 'Research, Knowledge Representation',
     period: '2025 – 2026',
-    place: 'Institut Polytechnique de Paris · Palaiseau, France',
+    place: 'Télécom Paris · Palaiseau, France',
     description:
       'Research on keeping a knowledge base built from Wikidata logically consistent, leading to two ISWC 2026 papers.',
     topics: ['kg'],
@@ -238,7 +238,7 @@ export const education:{ id: string; degree: string; school: string; period: str
   {
     id: 'ip-paris',
     degree: 'MSc in Data and Artificial Intelligence',
-    school: 'Institut Polytechnique de Paris · Palaiseau, France',
+    school: 'École polytechnique · Palaiseau, France',
     period: '2025 – present',
     coursework:
       'Large-scale Generative Models for NLP & Speech, Advanced Deep Learning, Text Mining & NLP, Reinforcement Learning, Graph Learning, Verification of Neural Networks, Optimisation & Responsible AI',
